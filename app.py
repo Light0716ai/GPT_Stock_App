@@ -2,25 +2,39 @@ import streamlit as st
 import yfinance as yf
 from openai import OpenAI
 import datetime
+import requests
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 us_stocks = ["NVDA", "TSLA", "PLTR"]
 tw_stocks = ["0056.TW", "2409.TW", "3035.TW"]
 
-# 查詢 GPT 帳號配額
+# 查詢 GPT 帳戶配額（用 requests）
 def check_openai_quota():
     try:
-        billing_info = client.billing.usage()
-        quota_info = client.billing.subscription()
-        used = billing_info.get("total_usage", 0) / 100  # 轉成 USD
-        limit = quota_info.get("hard_limit_usd", 0)
+        headers = {
+            "Authorization": f"Bearer {st.secrets['OPENAI_API_KEY']}"
+        }
+
+        # 查詢訂閱額度
+        sub_url = "https://api.openai.com/v1/dashboard/billing/subscription"
+        sub_resp = requests.get(sub_url, headers=headers)
+        limit = sub_resp.json().get("hard_limit_usd", 0)
+
+        # 查詢使用量
+        usage_url = "https://api.openai.com/v1/dashboard/billing/usage"
+        today = datetime.date.today().isoformat()
+        start_date = datetime.date.today().replace(day=1).isoformat()
+        usage_url += f"?start_date={start_date}&end_date={today}"
+        usage_resp = requests.get(usage_url, headers=headers)
+        used = usage_resp.json().get("total_usage", 0) / 100  # cents to USD
+
         remaining = limit - used
         return f"🧾 OpenAI 使用額度：${used:.2f} / ${limit:.2f}（剩餘 ${remaining:.2f}）"
+
     except Exception as e:
         return f"⚠️ 無法查詢 API 額度：{str(e)}"
 
-# 抓股價資訊
 def get_stock_data(tickers):
     stock_list = []
     for symbol in tickers:
@@ -37,7 +51,6 @@ def get_stock_data(tickers):
         })
     return stock_list
 
-# 呼叫 GPT 產生分析
 def analyze_with_gpt(stock_data, label="台股"):
     text = f"以下是{label}股票清單與資訊：\n"
     for s in stock_data:
@@ -55,7 +68,7 @@ def analyze_with_gpt(stock_data, label="台股"):
     except Exception as e:
         return f"⚠️ GPT 錯誤：{str(e)}"
 
-# ===== UI 顯示區 =====
+# ===== UI 區塊 =====
 st.markdown("""
 <style>
     .main {
