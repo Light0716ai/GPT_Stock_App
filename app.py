@@ -24,15 +24,21 @@ def get_stock_data(tickers):
         })
     return stock_list
 
+from openai import OpenAI
+
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
 def analyze_with_gpt(stock_data, label="台股"):
     text = f"以下是{label}股票清單與資訊：\n"
     for s in stock_data:
         text += f"- {s['代號']} {s['名稱']}（價格：{s['價格']}，本益比：{s['PE']}）\n"
     text += "請從中選出三檔最有機會在一個月內上漲 100% 的股票，並說明原因（用繁體中文簡潔說明）。"
 
-    res = openai.ChatCompletion.create(
+    res = client.chat.completions.create(
         model="gpt-4",
-        messages=[{"role": "user", "content": text}]
+        messages=[
+            {"role": "user", "content": text}
+        ]
     )
     return res.choices[0].message.content
 
