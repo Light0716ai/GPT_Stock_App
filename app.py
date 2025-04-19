@@ -9,28 +9,25 @@ client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 us_stocks = ["NVDA", "TSLA", "PLTR"]
 tw_stocks = ["0056.TW", "2409.TW", "3035.TW"]
 
-# 查詢 GPT 帳戶配額（用 requests）
 def check_openai_quota():
     try:
         headers = {
             "Authorization": f"Bearer {st.secrets['OPENAI_API_KEY']}"
         }
 
-        # 查詢訂閱額度
         sub_url = "https://api.openai.com/v1/dashboard/billing/subscription"
         sub_resp = requests.get(sub_url, headers=headers)
         limit = sub_resp.json().get("hard_limit_usd", 0)
 
-        # 查詢使用量
         usage_url = "https://api.openai.com/v1/dashboard/billing/usage"
         today = datetime.date.today().isoformat()
         start_date = datetime.date.today().replace(day=1).isoformat()
         usage_url += f"?start_date={start_date}&end_date={today}"
         usage_resp = requests.get(usage_url, headers=headers)
-        used = usage_resp.json().get("total_usage", 0) / 100  # cents to USD
+        used = usage_resp.json().get("total_usage", 0) / 100
 
         remaining = limit - used
-        return f"🧾 OpenAI 使用額度：${used:.2f} / ${limit:.2f}（剩餘 ${remaining:.2f}）"
+        return f"OpenAI 使用額度：${used:.2f} / ${limit:.2f}（剩餘 ${remaining:.2f}）"
 
     except Exception as e:
         return f"⚠️ 無法查詢 API 額度：{str(e)}"
@@ -68,55 +65,36 @@ def analyze_with_gpt(stock_data, label="台股"):
     except Exception as e:
         return f"⚠️ GPT 錯誤：{str(e)}"
 
-# ===== UI 區塊 =====
-st.markdown("""
-<style>
-    .main {
-        background-color: #f6f6f6;
-        padding: 2rem;
-        font-family: 'Helvetica Neue', sans-serif;
-    }
-    .title {
-        font-size: 2.2rem;
-        font-weight: bold;
-        color: #333333;
-    }
-    .section {
-        background-color: white;
-        border-radius: 16px;
-        padding: 20px;
-        margin-top: 1.5rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-    .btn {
-        font-size: 1rem;
-        padding: 0.6rem 1.2rem;
-        border-radius: 12px;
-        background-color: #0044cc;
-        color: white;
-        border: none;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-st.markdown('<div class="title">📊 本週 GPT 股票潛力分析</div>', unsafe_allow_html=True)
+# UI 顯示
+st.title("本週 GPT 股票潛力分析")
 st.caption("這個工具每週自動分析台股與美股，找出最有機會在一個月內翻倍的潛力股（使用 GPT 分析）")
+st.text(check_openai_quota())
 
-st.markdown(check_openai_quota())
+def render_stock_section(title, data, explanation, is_tw=False):
+    st.subheader(title)
+    block = ""
+    for i in range(len(data)):
+        symbol = data[i]["代號"]
+        name = data[i]["名稱"]
+        price = data[i]["價格"]
+        cur = "元" if is_tw else "$"
+        explanation_line = explanation.split("\n")[i] if i < len(explanation.split("\n")) else ""
+        block += f"{symbol:<6}{name:<10}{cur}{price}
+GPT {explanation_line.strip()}
 
-if st.button("🔍 開始本週分析"):
-    with st.spinner("正在抓取股票資料與生成分析..."):
+"
+    st.text(block)
+
+if st.button("開始本週分析"):
+    with st.spinner("分析中..."):
         us_data = get_stock_data(us_stocks)
         tw_data = get_stock_data(tw_stocks)
 
         us_result = analyze_with_gpt(us_data, "美股")
         tw_result = analyze_with_gpt(tw_data, "台股")
 
-        st.markdown('<div class="section">🇺🇸 <b>GPT 分析：美股推薦</b></div>', unsafe_allow_html=True)
-        st.code(us_result, language="markdown")
-
-        st.markdown('<div class="section">🇹🇼 <b>GPT 分析：台股推薦</b></div>', unsafe_allow_html=True)
-        st.code(tw_result, language="markdown")
+        render_stock_section("美股", us_data, us_result, is_tw=False)
+        render_stock_section("台股", tw_data, tw_result, is_tw=True)
 
         today = datetime.date.today()
         st.caption(f"更新時間：{today}")
