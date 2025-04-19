@@ -79,8 +79,8 @@ def render_stock_section(title, data, explanation, is_tw=False):
         price = data[i]["價格"]
         cur = "元" if is_tw else "$"
         explanation_line = explanation.split("\n")[i] if i < len(explanation.split("\n")) else ""
-        block += f"{symbol:<6}{name:<10}{cur}{price}
-GPT {explanation_line.strip()}
+        block += f"{symbol:<6}{name:<10}{cur}{price}\n"
+        block += f"GPT {explanation_line.strip()}\n\n"
 
 "
     st.text(block)
