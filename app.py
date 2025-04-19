@@ -65,7 +65,6 @@ def analyze_with_gpt(stock_data, label="台股"):
     except Exception as e:
         return f"⚠️ GPT 錯誤：{str(e)}"
 
-# UI 顯示
 st.title("本週 GPT 股票潛力分析")
 st.caption("這個工具每週自動分析台股與美股，找出最有機會在一個月內翻倍的潛力股（使用 GPT 分析）")
 st.text(check_openai_quota())
@@ -73,14 +72,16 @@ st.text(check_openai_quota())
 def render_stock_section(title, data, explanation, is_tw=False):
     st.subheader(title)
     block = ""
+    lines = explanation.strip().split("\n")
     for i in range(len(data)):
         symbol = data[i]["代號"]
         name = data[i]["名稱"]
         price = data[i]["價格"]
         cur = "元" if is_tw else "$"
-        explanation_line = explanation.split("\n")[i] if i < len(explanation.split("\n")) else ""
-        block += f"{symbol:<6}{name:<10}{cur}{price}\n"
-        block += f"GPT {explanation_line.strip()}\n\n"
+        explanation_line = lines[i] if i < len(lines) else ""
+        block += f"{symbol:<6}{name:<10}{cur}{price}
+"
+        block += f"GPT {explanation_line.strip()}
 
 "
     st.text(block)
