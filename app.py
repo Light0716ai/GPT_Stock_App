@@ -1,9 +1,9 @@
 import streamlit as st
 import yfinance as yf
-import openai
+from openai import OpenAI
 import datetime
 
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 us_stocks = ["NVDA", "TSLA", "PLTR"]
 tw_stocks = ["0056.TW", "2409.TW", "3035.TW"]
@@ -23,10 +23,6 @@ def get_stock_data(tickers):
             "PE": pe
         })
     return stock_list
-
-from openai import OpenAI
-
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 def analyze_with_gpt(stock_data, label="台股"):
     text = f"以下是{label}股票清單與資訊：\n"
