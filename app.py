@@ -14,7 +14,6 @@ def check_openai_quota():
         headers = {
             "Authorization": f"Bearer {st.secrets['OPENAI_API_KEY']}"
         }
-
         sub_url = "https://api.openai.com/v1/dashboard/billing/subscription"
         sub_resp = requests.get(sub_url, headers=headers)
         limit = sub_resp.json().get("hard_limit_usd", 0)
@@ -25,10 +24,8 @@ def check_openai_quota():
         usage_url += f"?start_date={start_date}&end_date={today}"
         usage_resp = requests.get(usage_url, headers=headers)
         used = usage_resp.json().get("total_usage", 0) / 100
-
         remaining = limit - used
         return f"OpenAI 使用額度：${used:.2f} / ${limit:.2f}（剩餘 ${remaining:.2f}）"
-
     except Exception as e:
         return f"⚠️ 無法查詢 API 額度：{str(e)}"
 
@@ -57,9 +54,7 @@ def analyze_with_gpt(stock_data, label="台股"):
     try:
         res = client.chat.completions.create(
             model="gpt-3.5-turbo-1106",
-            messages=[
-                {"role": "user", "content": text}
-            ]
+            messages=[{"role": "user", "content": text}]
         )
         return res.choices[0].message.content
     except Exception as e:
@@ -79,11 +74,8 @@ def render_stock_section(title, data, explanation, is_tw=False):
         price = data[i]["價格"]
         cur = "元" if is_tw else "$"
         explanation_line = lines[i] if i < len(lines) else ""
-        block += f"{symbol:<6}{name:<10}{cur}{price}
-"
-        block += f"GPT {explanation_line.strip()}
-
-"
+        block += f"{symbol:<6}{name:<10}{cur}{price}\n"
+        block += f"GPT {explanation_line.strip()}\n\n"
     st.text(block)
 
 if st.button("開始本週分析"):
