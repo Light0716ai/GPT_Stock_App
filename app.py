@@ -31,12 +31,12 @@ def analyze_with_gpt(stock_data, label="台股"):
     text += "請從中選出三檔最有機會在一個月內上漲 100% 的股票，並說明原因（用繁體中文簡潔說明）。"
 
     res = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "user", "content": text}
-        ]
-    )
-    return res.choices[0].message.content
+    model="gpt-3.5-turbo-1106",  # ← 改這裡
+    messages=[{"role": "user", "content": text}]
+)
+return res.choices[0].message.content
+except Exception as e:
+    return f"⚠️ GPT 錯誤：{str(e)}"
 
 st.title("📈 本週 GPT 股票潛力分析")
 st.markdown("這個工具每週自動分析**台股與美股**，找出最有機會在一個月內翻倍的潛力股（使用 GPT 分析）")
