@@ -31,7 +31,7 @@ def analyze_with_gpt(stock_data, label="台股"):
     text += "請從中選出三檔最有機會在一個月內上漲 100% 的股票，並說明原因（用繁體中文簡潔說明）。"
 
     res = client.chat.completions.create(
-        model="gpt-4",
+        model="gpt-3.5-turbo",
         messages=[
             {"role": "user", "content": text}
         ]
