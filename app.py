@@ -8,6 +8,19 @@ client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 us_stocks = ["NVDA", "TSLA", "PLTR"]
 tw_stocks = ["0056.TW", "2409.TW", "3035.TW"]
 
+# 查詢 GPT 帳號配額
+def check_openai_quota():
+    try:
+        billing_info = client.billing.usage()
+        quota_info = client.billing.subscription()
+        used = billing_info.get("total_usage", 0) / 100  # 轉成 USD
+        limit = quota_info.get("hard_limit_usd", 0)
+        remaining = limit - used
+        return f"🧾 OpenAI 使用額度：${used:.2f} / ${limit:.2f}（剩餘 ${remaining:.2f}）"
+    except Exception as e:
+        return f"⚠️ 無法查詢 API 額度：{str(e)}"
+
+# 抓股價資訊
 def get_stock_data(tickers):
     stock_list = []
     for symbol in tickers:
@@ -24,6 +37,7 @@ def get_stock_data(tickers):
         })
     return stock_list
 
+# 呼叫 GPT 產生分析
 def analyze_with_gpt(stock_data, label="台股"):
     text = f"以下是{label}股票清單與資訊：\n"
     for s in stock_data:
@@ -41,26 +55,57 @@ def analyze_with_gpt(stock_data, label="台股"):
     except Exception as e:
         return f"⚠️ GPT 錯誤：{str(e)}"
 
-st.title("📈 本週 GPT 股票潛力分析")
-st.markdown("這個工具每週自動分析**台股與美股**，找出最有機會在一個月內翻倍的潛力股（使用 GPT 分析）")
+# ===== UI 顯示區 =====
+st.markdown("""
+<style>
+    .main {
+        background-color: #f6f6f6;
+        padding: 2rem;
+        font-family: 'Helvetica Neue', sans-serif;
+    }
+    .title {
+        font-size: 2.2rem;
+        font-weight: bold;
+        color: #333333;
+    }
+    .section {
+        background-color: white;
+        border-radius: 16px;
+        padding: 20px;
+        margin-top: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .btn {
+        font-size: 1rem;
+        padding: 0.6rem 1.2rem;
+        border-radius: 12px;
+        background-color: #0044cc;
+        color: white;
+        border: none;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown('<div class="title">📊 本週 GPT 股票潛力分析</div>', unsafe_allow_html=True)
+st.caption("這個工具每週自動分析台股與美股，找出最有機會在一個月內翻倍的潛力股（使用 GPT 分析）")
+
+st.markdown(check_openai_quota())
 
 if st.button("🔍 開始本週分析"):
     with st.spinner("正在抓取股票資料與生成分析..."):
-
         us_data = get_stock_data(us_stocks)
         tw_data = get_stock_data(tw_stocks)
 
         us_result = analyze_with_gpt(us_data, "美股")
         tw_result = analyze_with_gpt(tw_data, "台股")
 
-        st.subheader("🇺🇸 GPT 分析：美股推薦")
+        st.markdown('<div class="section">🇺🇸 <b>GPT 分析：美股推薦</b></div>', unsafe_allow_html=True)
         st.code(us_result, language="markdown")
 
-        st.subheader("🇹🇼 GPT 分析：台股推薦")
+        st.markdown('<div class="section">🇹🇼 <b>GPT 分析：台股推薦</b></div>', unsafe_allow_html=True)
         st.code(tw_result, language="markdown")
 
         today = datetime.date.today()
         st.caption(f"更新時間：{today}")
-
 else:
     st.info("請按下上方按鈕開始分析。")
