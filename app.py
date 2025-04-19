@@ -30,13 +30,16 @@ def analyze_with_gpt(stock_data, label="台股"):
         text += f"- {s['代號']} {s['名稱']}（價格：{s['價格']}，本益比：{s['PE']}）\n"
     text += "請從中選出三檔最有機會在一個月內上漲 100% 的股票，並說明原因（用繁體中文簡潔說明）。"
 
-    res = client.chat.completions.create(
-    model="gpt-3.5-turbo-1106",  # ← 改這裡
-    messages=[{"role": "user", "content": text}]
-)
-return res.choices[0].message.content
-except Exception as e:
-    return f"⚠️ GPT 錯誤：{str(e)}"
+    try:
+        res = client.chat.completions.create(
+            model="gpt-3.5-turbo-1106",
+            messages=[
+                {"role": "user", "content": text}
+            ]
+        )
+        return res.choices[0].message.content
+    except Exception as e:
+        return f"⚠️ GPT 錯誤：{str(e)}"
 
 st.title("📈 本週 GPT 股票潛力分析")
 st.markdown("這個工具每週自動分析**台股與美股**，找出最有機會在一個月內翻倍的潛力股（使用 GPT 分析）")
@@ -51,10 +54,10 @@ if st.button("🔍 開始本週分析"):
         tw_result = analyze_with_gpt(tw_data, "台股")
 
         st.subheader("🇺🇸 GPT 分析：美股推薦")
-        st.text(us_result)
+        st.code(us_result, language="markdown")
 
         st.subheader("🇹🇼 GPT 分析：台股推薦")
-        st.text(tw_result)
+        st.code(tw_result, language="markdown")
 
         today = datetime.date.today()
         st.caption(f"更新時間：{today}")
